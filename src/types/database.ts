@@ -343,6 +343,106 @@ export interface Database {
           created_at?: string;
         }
       >;
+      saas_settings: Table<
+        {
+          id: string;
+          nombre_saas: string;
+          logo_url: string | null;
+          favicon_url: string | null;
+          email_soporte: string | null;
+          whatsapp_soporte: string | null;
+          sitio_web: string | null;
+          documentacion_url: string | null;
+          facebook: string | null;
+          instagram: string | null;
+          tiktok: string | null;
+          login_logo_url: string | null;
+          login_background_url: string | null;
+          login_title: string;
+          login_subtitle: string;
+          login_slogan: string;
+          login_badge_1: string;
+          login_badge_2: string;
+          login_badge_3: string;
+          support_button_text: string;
+          support_whatsapp: string | null;
+          support_email: string | null;
+          created_at: string;
+          updated_at: string;
+        },
+        {
+          id?: string;
+          nombre_saas?: string;
+          logo_url?: string | null;
+          favicon_url?: string | null;
+          email_soporte?: string | null;
+          whatsapp_soporte?: string | null;
+          sitio_web?: string | null;
+          documentacion_url?: string | null;
+          facebook?: string | null;
+          instagram?: string | null;
+          tiktok?: string | null;
+          login_logo_url?: string | null;
+          login_background_url?: string | null;
+          login_title?: string;
+          login_subtitle?: string;
+          login_slogan?: string;
+          login_badge_1?: string;
+          login_badge_2?: string;
+          login_badge_3?: string;
+          support_button_text?: string;
+          support_whatsapp?: string | null;
+          support_email?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        }
+      >;
+      billing_settings: Table<
+        {
+          id: string;
+          trial_days: number;
+          grace_days: number;
+          auto_suspend: boolean;
+          mercadopago_enabled: boolean;
+          mercadopago_mode: 'sandbox' | 'produccion';
+          created_at: string;
+          updated_at: string;
+        },
+        {
+          id?: string;
+          trial_days?: number;
+          grace_days?: number;
+          auto_suspend?: boolean;
+          mercadopago_enabled?: boolean;
+          mercadopago_mode?: 'sandbox' | 'produccion';
+          created_at?: string;
+          updated_at?: string;
+        }
+      >;
+      notification_settings: Table<
+        {
+          id: string;
+          desktop_enabled: boolean;
+          sound_enabled: boolean;
+          notify_new_appointments: boolean;
+          notify_cancellations: boolean;
+          notify_new_users: boolean;
+          notify_support: boolean;
+          created_at: string;
+          updated_at: string;
+        },
+        {
+          id?: string;
+          desktop_enabled?: boolean;
+          sound_enabled?: boolean;
+          notify_new_appointments?: boolean;
+          notify_cancellations?: boolean;
+          notify_new_users?: boolean;
+          notify_support?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        }
+      >;
       horarios_barberia: Table<
         {
           id: string;
@@ -591,6 +691,9 @@ export type VentaRow = Database['public']['Tables']['ventas']['Row'];
 export type VentaDetalleInsert = Database['public']['Tables']['venta_detalle']['Insert'];
 export type PlanRow = Database['public']['Tables']['planes']['Row'];
 export type PagoRow = Database['public']['Tables']['pagos']['Row'];
+export type SaaSSettingsRow = Database['public']['Tables']['saas_settings']['Row'];
+export type BillingSettingsRow = Database['public']['Tables']['billing_settings']['Row'];
+export type NotificationSettingsRow = Database['public']['Tables']['notification_settings']['Row'];
 export type HorarioBarberiaRow = Database['public']['Tables']['horarios_barberia']['Row'];
 export type RedesBarberiaRow = Database['public']['Tables']['redes_barberia']['Row'];
 export type EmpleadoRow = Database['public']['Tables']['empleados']['Row'];

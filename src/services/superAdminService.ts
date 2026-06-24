@@ -34,6 +34,37 @@ export async function getSaaSMetrics() {
   };
 }
 
+export async function getSaaSAnalytics() {
+  const { data, error } = await supabase
+    .from('barberias')
+    .select('id, estado, plan_id, created_at, planes(nombre, precio_mensual)')
+    .order('created_at');
+  if (error) throw error;
+
+  const barberias = data ?? [];
+  const monthly = new Map<string, number>();
+  const activeSubscriptions = new Map<string, number>();
+  const planDistribution = new Map<string, number>();
+
+  barberias.forEach((barberia) => {
+    const month = new Date(barberia.created_at).toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });
+    monthly.set(month, (monthly.get(month) ?? 0) + 1);
+
+    const plan = Array.isArray(barberia.planes) ? barberia.planes[0] : barberia.planes;
+    const planName = plan?.nombre ?? 'Sin plan';
+    planDistribution.set(planName, (planDistribution.get(planName) ?? 0) + 1);
+    if (barberia.estado === 'activa') {
+      activeSubscriptions.set(planName, (activeSubscriptions.get(planName) ?? 0) + 1);
+    }
+  });
+
+  return {
+    newBarberiasByMonth: Array.from(monthly.entries()).map(([label, value]) => ({ label, value })),
+    activeSubscriptions: Array.from(activeSubscriptions.entries()).map(([label, value]) => ({ label, value })),
+    planDistribution: Array.from(planDistribution.entries()).map(([label, value]) => ({ label, value })),
+  };
+}
+
 export async function createBarberiaWithAdmin(payload: {
   barberia: {
     nombre_comercial: string;

@@ -108,7 +108,7 @@ export function AppShell({
             <div>
               <p className="text-base font-bold text-white">{activeLabel}</p>
               <p className="hidden text-xs text-zinc-500 sm:block">
-                {barberiaName} · {user.role.replace('_', ' ')}
+                {barberiaName} - {user.role.replace('_', ' ')}
               </p>
             </div>
           </div>

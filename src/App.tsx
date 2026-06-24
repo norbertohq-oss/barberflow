@@ -48,6 +48,7 @@ const pageMap: Record<View, ComponentType> = {
 export default function App() {
   const publicBookingMatch = window.location.pathname.match(/^\/reservar\/([^/]+)/);
   const paymentMatch = window.location.pathname.match(/^\/payment\/(success|failure|pending)$/);
+  const superAdminConfigMatch = window.location.pathname === '/super-admin/configuracion';
   const [auth, setAuth] = useState<AuthState | null>(null);
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [loading, setLoading] = useState(true);
@@ -69,7 +70,11 @@ export default function App() {
     if (auth && window.location.pathname === '/planes') {
       setActiveView('planes');
     }
-  }, [auth]);
+    if (auth && superAdminConfigMatch) {
+      setActiveView(auth.profile.rol === 'super_admin' ? 'super_admin_config' : roleHome[auth.profile.rol]);
+      if (auth.profile.rol !== 'super_admin') window.history.replaceState(null, '', '/');
+    }
+  }, [auth, superAdminConfigMatch]);
 
   if (publicBookingMatch) {
     return <PublicBooking slug={decodeURIComponent(publicBookingMatch[1])} />;
@@ -109,7 +114,8 @@ export default function App() {
         <AppShell
           activeView={activeView}
           onNavigate={(view) => {
-            window.history.pushState(null, '', view === 'planes' ? '/planes' : '/');
+            const path = view === 'planes' ? '/planes' : view === 'super_admin_config' ? '/super-admin/configuracion' : '/';
+            window.history.pushState(null, '', path);
             setActiveView(view);
           }}
           user={user}
