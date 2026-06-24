@@ -7,9 +7,9 @@ import { Input } from '../components/Input';
 import { getBarberia, updateConfiguracionBarberia } from '../services/configuracionService';
 import { listHorarios, updateHorario } from '../services/horariosService';
 import { getRedes, updateRedes } from '../services/redesService';
-import { createEmpleado, listEmpleados, toggleEmpleado, updateEmpleado } from '../services/empleadosService';
+import { createEmpleado, deleteEmpleado, listEmpleados, toggleEmpleado, updateEmpleado } from '../services/empleadosService';
 import { listProfiles } from '../services/profilesService';
-import { createAuthUser } from '../services/usuariosService';
+import { createAuthUser, deleteEmployeeAccess, updateEmployeePassword } from '../services/usuariosService';
 import type { BarberiaRow, EmpleadoRow, HorarioBarberiaRow, ProfileRow, RedesBarberiaRow } from '../types/database';
 import type { UserRole } from '../types/database';
 import { getErrorMessage } from '../lib/errors';
@@ -42,6 +42,7 @@ export function Configuracion() {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [employeeForm, setEmployeeForm] = useState(emptyEmployee);
   const [editingEmployee, setEditingEmployee] = useState<EmpleadoRow | null>(null);
+  const [employeePassword, setEmployeePassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -141,9 +142,59 @@ export function Configuracion() {
     if (editingEmployee) await updateEmpleado(editingEmployee.id, payload);
     else await createEmpleado(payload);
     setEmployeeForm(emptyEmployee);
+    setEmployeePassword('');
     setEditingEmployee(null);
     setMessage(editingEmployee ? 'Empleado actualizado.' : employeeForm.crear_acceso ? 'Empleado y usuario creados.' : 'Empleado creado.');
     await load();
+  };
+
+  const changeEmployeePassword = async () => {
+    if (!editingEmployee?.profile_id) {
+      setError('Este empleado no tiene usuario de acceso.');
+      return;
+    }
+    if (employeePassword.length < 6) {
+      setError('La nueva contrasena debe tener al menos 6 caracteres.');
+      return;
+    }
+    setError('');
+    try {
+      await updateEmployeePassword({
+        empleado_id: editingEmployee.id,
+        profile_id: editingEmployee.profile_id,
+        password: employeePassword,
+      });
+      setEmployeePassword('');
+      setMessage('Contrasena del empleado actualizada.');
+    } catch (passwordError) {
+      setError(getErrorMessage(passwordError, 'No se pudo actualizar la contrasena.'));
+    }
+  };
+
+  const removeEmployee = async (empleado: EmpleadoRow) => {
+    const confirmDelete = window.confirm(
+      empleado.profile_id
+        ? `Eliminar a ${empleado.nombre} y su acceso al sistema? Esta accion no se puede deshacer.`
+        : `Eliminar a ${empleado.nombre}? Esta accion no se puede deshacer.`,
+    );
+    if (!confirmDelete) return;
+    setError('');
+    try {
+      if (empleado.profile_id) {
+        await deleteEmployeeAccess({ empleado_id: empleado.id, profile_id: empleado.profile_id, delete_auth_user: true });
+      } else {
+        await deleteEmpleado(empleado.id);
+      }
+      if (editingEmployee?.id === empleado.id) {
+        setEditingEmployee(null);
+        setEmployeeForm(emptyEmployee);
+        setEmployeePassword('');
+      }
+      setMessage('Empleado eliminado.');
+      await load();
+    } catch (deleteError) {
+      setError(getErrorMessage(deleteError, 'No se pudo eliminar el empleado.'));
+    }
   };
 
   if (!barberiaId) {
@@ -255,7 +306,26 @@ export function Configuracion() {
                   )}
                 </div>
               )}
+              {editingEmployee?.profile_id && (
+                <div className="rounded-2xl border border-gold-400/20 bg-gold-400/10 p-4">
+                  <p className="font-bold text-white">Cambiar contrasena de acceso</p>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">Actualiza la contrasena del usuario Auth relacionado con este empleado.</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                    <Input label="Nueva contrasena" type="password" value={employeePassword} onChange={(e) => setEmployeePassword(e.target.value)} />
+                    <Button type="button" variant="dark" onClick={changeEmployeePassword}>Actualizar contrasena</Button>
+                  </div>
+                </div>
+              )}
               <Button>{editingEmployee ? 'Actualizar' : 'Crear empleado'}</Button>
+              {editingEmployee && (
+                <Button type="button" variant="ghost" onClick={() => {
+                  setEditingEmployee(null);
+                  setEmployeePassword('');
+                  setEmployeeForm(emptyEmployee);
+                }}>
+                  Cancelar edicion
+                </Button>
+              )}
             </form>
           </Card>
           <Card>
@@ -282,8 +352,9 @@ export function Configuracion() {
                       comision_porcentaje: Number(empleado.comision_porcentaje),
                       crear_acceso: false,
                       password: '',
-                    }); }}>Editar</Button>
+                    }); setEmployeePassword(''); }}>Editar</Button>
                     <Button variant="dark" onClick={() => toggleEmpleado(empleado.id, !empleado.activo).then(load)}>{empleado.activo ? 'Desactivar' : 'Activar'}</Button>
+                    <Button variant="ghost" onClick={() => removeEmployee(empleado)}>Eliminar</Button>
                   </div>
                 </div>
               ))}

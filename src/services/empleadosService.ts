@@ -25,3 +25,8 @@ export async function updateEmpleado(id: string, payload: EmpleadoUpdate) {
 export async function toggleEmpleado(id: string, activo: boolean) {
   return updateEmpleado(id, { activo });
 }
+
+export async function deleteEmpleado(id: string) {
+  const { error } = await supabase.from('empleados').delete().eq('id', id);
+  if (error) throw error;
+}

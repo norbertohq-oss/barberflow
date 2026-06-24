@@ -34,3 +34,21 @@ export async function createAuthUser(payload: {
   if (data?.error) throw new Error(data.error);
   return data;
 }
+
+export async function updateEmployeePassword(payload: { empleado_id: string; profile_id: string; password: string }) {
+  const { data, error } = await supabase.functions.invoke('manage-employee', {
+    body: { action: 'update_password', ...payload },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+export async function deleteEmployeeAccess(payload: { empleado_id: string; profile_id?: string | null; delete_auth_user?: boolean }) {
+  const { data, error } = await supabase.functions.invoke('manage-employee', {
+    body: { action: 'delete_employee', ...payload },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
