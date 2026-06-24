@@ -21,7 +21,6 @@
   },
   "devDependencies": {
     "@eslint/js": "latest",
-    "@supabase/cli-windows-x64": "^2.107.0",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "autoprefixer": "^10.4.21",
