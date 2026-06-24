@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-labelledby="title desc">
+  <title id="title">BarberFlow monogram</title>
+  <desc id="desc">Premium B monogram with barber pole, scissors and straight razor.</desc>
+  <rect width="1024" height="1024" rx="224" fill="#0F1115"/>
+  <g transform="translate(112 92)">
+    <path d="M279 91v744" stroke="#D4AF37" stroke-width="64"/>
+    <path d="M292 112h210c151 0 255 76 255 199 0 78-42 139-113 172 94 30 153 99 153 196 0 137-111 226-277 226H292"
+      stroke="#D4AF37" stroke-width="72"/>
+    <path d="M312 160h177c94 0 157 50 157 132 0 84-63 135-158 135H312" stroke="#F8F9FA" stroke-width="22"/>
+    <path d="M312 505h206c104 0 171 58 171 151 0 94-67 153-174 153H312" stroke="#F8F9FA" stroke-width="22"/>
+    <g stroke="#D4AF37" stroke-width="28">
+      <path d="M360 207v227"/>
+      <path d="M360 234l86 48"/>
+      <path d="M360 306l86 48"/>
+      <path d="M360 378l70 39"/>
+    </g>
+    <g stroke="#F8F9FA" stroke-width="24">
+      <circle cx="424" cy="625" r="42"/>
+      <circle cx="544" cy="625" r="42"/>
+      <path d="M454 654l-102 109"/>
+      <path d="M514 654l112 119"/>
+      <path d="M470 610l46 31"/>
+    </g>
+    <g stroke="#D4AF37" stroke-width="26">
+      <path d="M427 735h183"/>
+      <path d="M610 735l72 46"/>
+      <path d="M610 735l72-46"/>
+      <path d="M427 735l-46-30"/>
+    </g>
+    <path d="M172 132v725" stroke="#D4AF37" stroke-width="18" opacity=".55"/>
+    <path d="M158 132h220" stroke="#D4AF37" stroke-width="18" opacity=".55"/>
+    <path d="M158 857h374" stroke="#D4AF37" stroke-width="18" opacity=".55"/>
+  </g>
+  
+  <g fill="#F8F9FA" text-anchor="middle">
+    <text x="512" y="946" font-family="Georgia, serif" font-size="58" font-weight="700" letter-spacing="13">BARBERFLOW</text>
+    <text x="512" y="988" font-family="Arial, sans-serif" font-size="22" letter-spacing="10" opacity=".62">PREMIUM BARBERSHOP SAAS</text>
+  </g>
+</svg>
