@@ -1,4 +1,4 @@
-import { Eye, Lock, Mail, ShieldCheck } from 'lucide-react';
+import { Eye, Lock, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { signIn, type AuthState } from '../services/authService';
 import { defaultSaasSettings, getPublicSaaSSettings } from '../services/saasSettingsService';
@@ -10,9 +10,11 @@ import { Logo } from '../components/Logo';
 export function Login({
   initialError = '',
   onLogin,
+  onShowRegister,
 }: {
   initialError?: string;
   onLogin: (state: AuthState) => void;
+  onShowRegister: () => void;
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -122,6 +124,14 @@ export function Login({
           </form>
 
           <div className="mt-6 text-center text-sm text-zinc-400">
+            <button
+              className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-[22px] border border-gold-400/35 bg-gold-400/10 px-5 py-3 text-sm font-bold text-gold-200 transition hover:bg-gold-400/15"
+              onClick={onShowRegister}
+              type="button"
+            >
+              <Sparkles size={17} />
+              Crear prueba gratis
+            </button>
             Problemas para ingresar?{' '}
             <a href={supportHref} target={supportHref.startsWith('http') ? '_blank' : undefined} rel="noreferrer" className="font-semibold text-gold-400 hover:text-gold-300">
               {settings.support_button_text || 'Contactar soporte'}

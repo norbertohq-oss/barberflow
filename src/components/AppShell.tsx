@@ -48,6 +48,7 @@ export function AppShell({
   user,
   barberiaName,
   barberiaLogoUrl,
+  billingLocked = false,
   onLogout,
   children,
 }: {
@@ -56,10 +57,11 @@ export function AppShell({
   user: UserSession;
   barberiaName: string;
   barberiaLogoUrl?: string | null;
+  billingLocked?: boolean;
   onLogout: () => void;
   children: React.ReactNode;
 }) {
-  const visibleNav = navItems.filter((item) => canAccess(user.role, item.roles));
+  const visibleNav = navItems.filter((item) => canAccess(user.role, item.roles) && (!billingLocked || ['planes', 'soporte'].includes(item.id)));
   const activeLabel = navItems.find((item) => item.id === activeView)?.label ?? 'BarberFlow';
 
   return (
@@ -126,7 +128,14 @@ export function AppShell({
       </header>
 
       <main className="pb-24 lg:ml-[274px] lg:pb-8">
-        <div className="mx-auto max-w-[1220px] px-4 py-6 lg:px-6">{children}</div>
+        <div className="mx-auto max-w-[1220px] px-4 py-6 lg:px-6">
+          {billingLocked && (
+            <div className="mb-5 rounded-[24px] border border-amber-400/25 bg-amber-500/10 p-4 text-sm text-amber-100">
+              Tu periodo de prueba termino. Contrata un plan para reactivar la operacion de tu barberia.
+            </div>
+          )}
+          {children}
+        </div>
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/10 bg-obsidian-900/95 px-2 py-2 backdrop-blur lg:hidden">

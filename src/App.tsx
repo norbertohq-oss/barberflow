@@ -7,6 +7,7 @@ import { AuthContext } from './context/AuthContext';
 import { NotificationsProvider } from './context/NotificationsContext';
 import { AppShell } from './components/AppShell';
 import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { Agenda } from './pages/Agenda';
 import { Clientes } from './pages/Clientes';
@@ -49,8 +50,10 @@ export default function App() {
   const publicBookingMatch = window.location.pathname.match(/^\/reservar\/([^/]+)/);
   const paymentMatch = window.location.pathname.match(/^\/payment\/(success|failure|pending)$/);
   const superAdminConfigMatch = window.location.pathname === '/super-admin/configuracion';
+  const registerMatch = window.location.pathname === '/registro';
   const [auth, setAuth] = useState<AuthState | null>(null);
   const [activeView, setActiveView] = useState<View>('dashboard');
+  const [showRegister, setShowRegister] = useState(registerMatch);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState('');
 
@@ -96,10 +99,36 @@ export default function App() {
   }
 
   if (!auth) {
-    return <Login initialError={authError} onLogin={(state) => setAuth(state)} />;
+    if (showRegister) {
+      return (
+        <Register
+          onBack={() => {
+            window.history.pushState(null, '', '/');
+            setShowRegister(false);
+          }}
+          onRegistered={(state) => {
+            window.history.pushState(null, '', '/');
+            setShowRegister(false);
+            setAuth(state);
+          }}
+        />
+      );
+    }
+    return (
+      <Login
+        initialError={authError}
+        onLogin={(state) => setAuth(state)}
+        onShowRegister={() => {
+          window.history.pushState(null, '', '/registro');
+          setShowRegister(true);
+        }}
+      />
+    );
   }
 
-  const ActivePage = pageMap[activeView];
+  const billingLocked = isBillingLocked(auth);
+  const effectiveView = billingLocked && auth.profile.rol === 'admin' ? 'planes' : activeView;
+  const ActivePage = pageMap[effectiveView];
   const user = {
     id: auth.profile.id,
     name: auth.profile.nombre,
@@ -112,8 +141,11 @@ export default function App() {
     <AuthContext.Provider value={{ ...auth, refreshAuth }}>
       <NotificationsProvider>
         <AppShell
-          activeView={activeView}
+          activeView={effectiveView}
           onNavigate={(view) => {
+            if (billingLocked && auth.profile.rol === 'admin' && !['planes', 'soporte'].includes(view)) {
+              view = 'planes';
+            }
             const path = view === 'planes' ? '/planes' : view === 'super_admin_config' ? '/super-admin/configuracion' : '/';
             window.history.pushState(null, '', path);
             setActiveView(view);
@@ -121,6 +153,7 @@ export default function App() {
           user={user}
           barberiaName={auth.barberia?.nombre_comercial ?? 'BarberFlow SaaS'}
           barberiaLogoUrl={auth.barberia?.logo_url ?? null}
+          billingLocked={billingLocked && auth.profile.rol === 'admin'}
           onLogout={async () => {
             await signOut();
             setAuth(null);
@@ -131,4 +164,13 @@ export default function App() {
       </NotificationsProvider>
     </AuthContext.Provider>
   );
+}
+
+function isBillingLocked(auth: AuthState) {
+  if (auth.profile.rol === 'super_admin' || !auth.barberia) return false;
+  if (auth.barberia.estado === 'suspendida' || auth.barberia.estado === 'cancelada') return true;
+  if (auth.barberia.estado !== 'prueba') return false;
+  if (!auth.barberia.fecha_fin_plan) return false;
+  const trialEnd = new Date(`${auth.barberia.fecha_fin_plan}T23:59:59`);
+  return trialEnd.getTime() < Date.now();
 }
