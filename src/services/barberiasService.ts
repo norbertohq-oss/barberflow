@@ -28,3 +28,12 @@ export async function updateBarberia(id: string, payload: BarberiaUpdate) {
 export async function setBarberiaEstado(id: string, estado: 'activa' | 'suspendida' | 'cancelada' | 'prueba') {
   return updateBarberia(id, { estado });
 }
+
+export async function deleteBarberia(payload: { barberia_id: string; confirmation: string }) {
+  const { data, error } = await supabase.functions.invoke('manage-barberia', {
+    body: { action: 'delete_barberia', ...payload },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
+}

@@ -1,9 +1,9 @@
-import { Building2, Plus } from 'lucide-react';
+import { Building2, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Input } from '../../components/Input';
-import { listBarberias, setBarberiaEstado, updateBarberia } from '../../services/barberiasService';
+import { deleteBarberia, listBarberias, setBarberiaEstado, updateBarberia } from '../../services/barberiasService';
 import { listPlanes } from '../../services/planesService';
 import { createBarberiaWithAdmin } from '../../services/superAdminService';
 import type { PlanRow } from '../../types/database';
@@ -100,6 +100,35 @@ export function SuperAdminBarberias() {
     await load();
   };
 
+  const handleDelete = async (barberia: BarberiaAdminRow) => {
+    setError('');
+    setMessage('');
+
+    const firstConfirm = window.confirm(
+      `Vas a eliminar "${barberia.nombre_comercial}".\n\nEsta accion borra la barberia, usuarios de acceso, clientes, citas, ventas y configuracion relacionada. No se puede deshacer.\n\nQuieres continuar?`,
+    );
+    if (!firstConfirm) return;
+
+    const confirmation = window.prompt(`Para confirmar, escribe exactamente el nombre de la barberia:\n${barberia.nombre_comercial}`);
+    if (confirmation === null) return;
+    if (confirmation !== barberia.nombre_comercial) {
+      setError('El nombre no coincide. No se elimino la barberia.');
+      return;
+    }
+
+    try {
+      await deleteBarberia({ barberia_id: barberia.id, confirmation });
+      if (editingId === barberia.id) {
+        setEditingId(null);
+        setForm(emptyForm);
+      }
+      setMessage(`Barberia "${barberia.nombre_comercial}" eliminada correctamente.`);
+      await load();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'No se pudo eliminar la barberia.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -162,6 +191,10 @@ export function SuperAdminBarberias() {
                 }}>Editar</Button>
                 <Button variant="dark" onClick={() => setBarberiaEstado(barberia.id, 'suspendida').then(load)}>Suspender</Button>
                 <Button variant="dark" onClick={() => setBarberiaEstado(barberia.id, 'activa').then(load)}>Reactivar</Button>
+                <Button variant="dark" className="border-rose-400/30 text-rose-200 hover:bg-rose-500/10" onClick={() => void handleDelete(barberia)}>
+                  <Trash2 size={16} />
+                  Eliminar
+                </Button>
               </div>
             </Card>
           );
