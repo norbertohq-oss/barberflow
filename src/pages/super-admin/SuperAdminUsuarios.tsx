@@ -1,10 +1,10 @@
-import { Plus } from 'lucide-react';
+import { KeyRound, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Input } from '../../components/Input';
 import { listBarberias } from '../../services/barberiasService';
-import { createAuthUser, listUsuarios, toggleUsuario, updateUsuario } from '../../services/usuariosService';
+import { createAuthUser, listUsuarios, toggleUsuario, updateUsuario, updateUsuarioPassword } from '../../services/usuariosService';
 import type { ProfileRow, UserRole } from '../../types/database';
 
 const roles: UserRole[] = ['super_admin', 'admin', 'cajero', 'barbero', 'cliente'];
@@ -16,6 +16,8 @@ export function SuperAdminUsuarios() {
   const [barberias, setBarberias] = useState<BarberiaOption[]>([]);
   const [form, setForm] = useState({ nombre: '', email: '', password: '', rol: 'admin' as UserRole, barberia_id: '' });
   const [filters, setFilters] = useState({ barberiaId: '', rol: '' as UserRole | '' });
+  const [passwordForm, setPasswordForm] = useState({ userId: '', password: '' });
+  const [savingPassword, setSavingPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -45,6 +47,30 @@ export function SuperAdminUsuarios() {
     await load();
   };
 
+  const submitPasswordChange = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    if (!passwordForm.userId) {
+      setError('Selecciona un usuario.');
+      return;
+    }
+    if (passwordForm.password.length < 8) {
+      setError('La nueva contrasena debe tener al menos 8 caracteres.');
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      await updateUsuarioPassword(passwordForm.userId, passwordForm.password);
+      setPasswordForm({ userId: '', password: '' });
+      setMessage('Contrasena actualizada.');
+    } catch (passwordError) {
+      setError(passwordError instanceof Error ? passwordError.message : 'No se pudo actualizar la contrasena.');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -61,6 +87,28 @@ export function SuperAdminUsuarios() {
           <Select label="Rol" value={form.rol} onChange={(value) => setForm({ ...form, rol: value as UserRole })} options={roles.map((role) => [role, role])} />
           <Select label="Barberia" value={form.barberia_id} onChange={(value) => setForm({ ...form, barberia_id: value })} options={barberias.map((barberia) => [barberia.id, barberia.nombre_comercial])} />
           <div className="flex items-end"><Button className="w-full"><Plus size={18} /> Crear</Button></div>
+        </form>
+      </Card>
+      <Card>
+        <form className="grid gap-4 lg:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_auto]" onSubmit={submitPasswordChange}>
+          <Select
+            label="Usuario"
+            value={passwordForm.userId}
+            onChange={(value) => setPasswordForm({ ...passwordForm, userId: value })}
+            options={usuarios.map((user) => [user.id, `${user.nombre || user.email} (${user.rol})`])}
+          />
+          <Input
+            label="Nueva contrasena temporal"
+            type="password"
+            value={passwordForm.password}
+            onChange={(e) => setPasswordForm({ ...passwordForm, password: e.target.value })}
+          />
+          <div className="flex items-end">
+            <Button className="w-full" disabled={savingPassword || !passwordForm.userId || passwordForm.password.length < 8}>
+              <KeyRound size={18} />
+              {savingPassword ? 'Actualizando...' : 'Cambiar'}
+            </Button>
+          </div>
         </form>
       </Card>
       <div className="flex flex-col gap-3 md:flex-row">

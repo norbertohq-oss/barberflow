@@ -22,6 +22,14 @@ export async function toggleUsuario(id: string, activo: boolean) {
   return updateUsuario(id, { activo });
 }
 
+export async function updateUsuarioPassword(id: string, password: string) {
+  const { error } = await supabase.rpc('bf_super_admin_update_user_password', {
+    p_user_id: id,
+    p_password: password,
+  });
+  if (error) throw error;
+}
+
 export async function createAuthUser(payload: {
   email: string;
   password: string;
