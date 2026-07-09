@@ -1,6 +1,9 @@
 import type { LucideIcon } from 'lucide-react';
 
 export type Role = 'super_admin' | 'admin' | 'cajero' | 'barbero' | 'cliente';
+export type PlanFeature = 'incluye_whatsapp' | 'incluye_reportes' | 'incluye_lealtad' | 'incluye_membresias';
+export type PlanFeatureAccess = Record<PlanFeature, boolean>;
+
 export type View =
   | 'super_admin_dashboard'
   | 'super_admin_barberias'

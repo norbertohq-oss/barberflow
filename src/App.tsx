@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ComponentType } from 'react';
-import type { View } from './types';
-import { roleHome } from './lib/permissions';
+import type { PlanFeatureAccess, View } from './types';
+import { isViewEnabledForPlan, roleHome } from './lib/permissions';
 import { getAuthState, signOut, type AuthState } from './services/authService';
+import { getPlanById } from './services/planesService';
 import { AuthContext } from './context/AuthContext';
 import { NotificationsProvider } from './context/NotificationsContext';
 import { AppShell } from './components/AppShell';
@@ -54,6 +55,7 @@ export default function App() {
   const [auth, setAuth] = useState<AuthState | null>(null);
   const [activeView, setActiveView] = useState<View>('dashboard');
   const [showRegister, setShowRegister] = useState(registerMatch);
+  const [planFeatures, setPlanFeatures] = useState<PlanFeatureAccess | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState('');
 
@@ -78,6 +80,39 @@ export default function App() {
       if (auth.profile.rol !== 'super_admin') window.history.replaceState(null, '', '/');
     }
   }, [auth, superAdminConfigMatch]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadPlanFeatures() {
+      if (!auth?.barberia?.plan_id || auth.profile.rol === 'super_admin') {
+        setPlanFeatures(null);
+        return;
+      }
+
+      const plan = await getPlanById(auth.barberia.plan_id);
+      if (ignore) return;
+
+      setPlanFeatures(
+        plan
+          ? {
+              incluye_whatsapp: Boolean(plan.incluye_whatsapp),
+              incluye_reportes: Boolean(plan.incluye_reportes),
+              incluye_lealtad: Boolean(plan.incluye_lealtad),
+              incluye_membresias: Boolean(plan.incluye_membresias),
+            }
+          : null,
+      );
+    }
+
+    loadPlanFeatures().catch(() => {
+      if (!ignore) setPlanFeatures(null);
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [auth?.barberia?.plan_id, auth?.profile.rol]);
 
   if (publicBookingMatch) {
     return <PublicBooking slug={decodeURIComponent(publicBookingMatch[1])} />;
@@ -127,7 +162,8 @@ export default function App() {
   }
 
   const billingLocked = isBillingLocked(auth);
-  const effectiveView = billingLocked && auth.profile.rol === 'admin' ? 'planes' : activeView;
+  const planLockedView = auth.profile.rol !== 'super_admin' && !isViewEnabledForPlan(activeView, planFeatures);
+  const effectiveView = billingLocked && auth.profile.rol === 'admin' ? 'planes' : planLockedView ? roleHome[auth.profile.rol] : activeView;
   const ActivePage = pageMap[effectiveView];
   const user = {
     id: auth.profile.id,
@@ -146,6 +182,9 @@ export default function App() {
             if (billingLocked && auth.profile.rol === 'admin' && !['planes', 'soporte'].includes(view)) {
               view = 'planes';
             }
+            if (auth.profile.rol !== 'super_admin' && !isViewEnabledForPlan(view, planFeatures)) {
+              view = roleHome[auth.profile.rol];
+            }
             const path = view === 'planes' ? '/planes' : view === 'super_admin_config' ? '/super-admin/configuracion' : '/';
             window.history.pushState(null, '', path);
             setActiveView(view);
@@ -154,6 +193,7 @@ export default function App() {
           barberiaName={auth.barberia?.nombre_comercial ?? 'BarberFlow SaaS'}
           barberiaLogoUrl={auth.barberia?.logo_url ?? null}
           billingLocked={billingLocked && auth.profile.rol === 'admin'}
+          planFeatures={auth.profile.rol === 'super_admin' ? null : planFeatures}
           onLogout={async () => {
             await signOut();
             setAuth(null);

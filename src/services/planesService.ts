@@ -13,6 +13,12 @@ export async function listPlanes(onlyActive = false) {
   return dedupeOfficialPlans(data);
 }
 
+export async function getPlanById(id: string) {
+  const { data, error } = await supabase.from('planes').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function createPlan(payload: PlanInsert) {
   const { data, error } = await supabase.from('planes').insert(payload).select('*').single();
   if (error) throw error;

@@ -1,4 +1,4 @@
-import type { Role, View } from '../types';
+import type { PlanFeature, PlanFeatureAccess, Role, View } from '../types';
 
 export const roleHome: Record<Role, View> = {
   super_admin: 'super_admin_dashboard',
@@ -9,3 +9,13 @@ export const roleHome: Record<Role, View> = {
 };
 
 export const canAccess = (role: Role, allowedRoles: Role[]) => allowedRoles.includes(role);
+
+export const viewPlanFeatures: Partial<Record<View, PlanFeature>> = {
+  lealtad: 'incluye_lealtad',
+};
+
+export function isViewEnabledForPlan(view: View, planFeatures?: PlanFeatureAccess | null) {
+  const requiredFeature = viewPlanFeatures[view];
+  if (!requiredFeature) return true;
+  return Boolean(planFeatures?.[requiredFeature]);
+}

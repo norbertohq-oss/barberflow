@@ -16,8 +16,8 @@ import {
   Gift,
 } from 'lucide-react';
 import clsx from 'clsx';
-import type { NavItem, UserSession, View } from '../types';
-import { canAccess } from '../lib/permissions';
+import type { NavItem, PlanFeatureAccess, UserSession, View } from '../types';
+import { canAccess, isViewEnabledForPlan } from '../lib/permissions';
 import { initials } from '../lib/format';
 import { Button } from './Button';
 import { Logo } from './Logo';
@@ -49,6 +49,7 @@ export function AppShell({
   barberiaName,
   barberiaLogoUrl,
   billingLocked = false,
+  planFeatures = null,
   onLogout,
   children,
 }: {
@@ -58,10 +59,16 @@ export function AppShell({
   barberiaName: string;
   barberiaLogoUrl?: string | null;
   billingLocked?: boolean;
+  planFeatures?: PlanFeatureAccess | null;
   onLogout: () => void;
   children: React.ReactNode;
 }) {
-  const visibleNav = navItems.filter((item) => canAccess(user.role, item.roles) && (!billingLocked || ['planes', 'soporte'].includes(item.id)));
+  const visibleNav = navItems.filter(
+    (item) =>
+      canAccess(user.role, item.roles) &&
+      isViewEnabledForPlan(item.id, planFeatures) &&
+      (!billingLocked || ['planes', 'soporte'].includes(item.id)),
+  );
   const activeLabel = navItems.find((item) => item.id === activeView)?.label ?? 'BarberFlow';
 
   return (
