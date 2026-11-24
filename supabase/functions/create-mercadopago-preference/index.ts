@@ -68,6 +68,14 @@ Deno.serve(async (req) => {
       .single();
     if (planError || !plan) throw new Error('Plan no disponible.');
 
+    // Save the quoted price before opening checkout; later plan edits must not change it.
+    const { data: order, error: orderError } = await adminClient
+      .from('bf_checkout_orders')
+      .insert({ barberia_id: barberia.id, plan_id: plan.id, expected_amount: plan.precio_mensual, currency: 'MXN' })
+      .select('id, expected_amount')
+      .single();
+    if (orderError || !order) throw new Error('No se pudo registrar la orden de pago.');
+
     const normalizedAppUrl = appUrl.replace(/\/$/, '');
     const preferencePayload = {
       items: [
@@ -76,7 +84,7 @@ Deno.serve(async (req) => {
           title: `BarberFlow ${plan.nombre}`,
           description: plan.descripcion ?? `Plan mensual ${plan.nombre}`,
           quantity: 1,
-          unit_price: Number(plan.precio_mensual),
+          unit_price: Number(order.expected_amount),
           currency_id: 'MXN',
         },
       ],
@@ -91,9 +99,10 @@ Deno.serve(async (req) => {
       },
       auto_return: 'approved',
       notification_url: `${supabaseUrl}/functions/v1/mercadopago-webhook`,
-      external_reference: `${barberia.id}:${plan.id}`,
+      external_reference: `order:${order.id}`,
       statement_descriptor: 'BARBERFLOW',
       metadata: {
+        order_id: order.id,
         barberia_id: barberia.id,
         barberia_nombre: barberia.nombre_comercial,
         plan_id: plan.id,
