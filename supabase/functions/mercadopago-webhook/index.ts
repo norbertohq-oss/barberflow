@@ -46,10 +46,22 @@ Deno.serve(async (req) => {
     // The order ID is created by our server and points to the original quoted price.
     const externalReference = String(payment.external_reference ?? '');
     const match = /^order:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.exec(externalReference);
-    if (!match) throw new Error('El pago no tiene una orden verificable; requiere revision manual.');
-    if (payment.transaction_amount == null || !payment.currency_id) throw new Error('El pago no contiene importe o moneda.');
-
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    if (!match) {
+      // Pre-migration checkouts have no saved quote. Keep them for manual reconciliation.
+      const { error: reviewError } = await adminClient.from('bf_payment_review_queue').upsert({
+        payment_id: String(payment.id),
+        external_reference: externalReference || null,
+        status: payment.status ?? 'unknown',
+        amount: payment.transaction_amount ?? null,
+        currency: payment.currency_id ?? null,
+        reason: 'legacy_or_unrecognized_order',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'payment_id' });
+      if (reviewError) throw reviewError;
+      return jsonResponse({ received: true, review_required: true });
+    }
+    if (payment.transaction_amount == null || !payment.currency_id) throw new Error('El pago no contiene importe o moneda.');
     const paymentRecord = {
       order_id: match[1],
       mercado_pago_payment_id: String(payment.id),
