@@ -345,7 +345,7 @@ function MetricsPanel({ metrics, analytics }: { metrics: Metrics; analytics: Ana
         <StatCard label="Suspendidas" value={String(metrics.suspendidas)} hint={`${metrics.prueba} en prueba`} icon={<ShieldCheck size={20} />} />
         <StatCard active label="Usuarios totales" value={String(metrics.usuariosTotales)} hint="Todos los perfiles" icon={<Mail size={20} />} />
         <StatCard label="Plan mas vendido" value={metrics.planMasVendido} hint="Por barberias asignadas" icon={<CreditCard size={20} />} />
-        <StatCard active label="MRR estimado" value={currency(metrics.ingresoMensual)} hint="Suma mensual por plan" icon={<CreditCard size={20} />} />
+        <StatCard active label="Planes activos al mes" value={currency(metrics.ingresoMensual)} hint="Estimado; no es dinero cobrado" icon={<CreditCard size={20} />} />
       </div>
       <div className="grid gap-4 xl:grid-cols-3">
         <MiniChart title="Nuevas barberias por mes" data={analytics.newBarberiasByMonth} />
