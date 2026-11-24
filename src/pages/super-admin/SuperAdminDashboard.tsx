@@ -26,7 +26,7 @@ export function SuperAdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard active label="Total barberias" value={String(metrics?.totalBarberias ?? '...')} hint={`${metrics?.activas ?? 0} activas`} icon={<Building2 size={20} />} />
         <StatCard label="En prueba" value={String(metrics?.prueba ?? '...')} hint={`${metrics?.suspendidas ?? 0} suspendidas`} icon={<WalletCards size={20} />} />
-        <StatCard active label="Ingreso mensual" value={metrics ? currency(metrics.ingresoMensual) : '...'} hint="Estimado por plan" icon={<CreditCard size={20} />} />
+        <StatCard active label="Planes activos al mes" value={metrics ? currency(metrics.ingresoMensual) : '...'} hint="Estimado; no es dinero cobrado" icon={<CreditCard size={20} />} />
         <StatCard label="Usuarios totales" value={String(metrics?.usuariosTotales ?? '...')} hint={`${metrics?.planesActivos ?? 0} planes activos`} icon={<Users size={20} />} />
       </div>
       <Card>

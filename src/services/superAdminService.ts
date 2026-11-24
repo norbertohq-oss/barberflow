@@ -12,7 +12,7 @@ export async function getSaaSMetrics() {
     if (response.error) throw response.error;
   }
   const list = barberias.data ?? [];
-  const revenue = list.reduce((sum, item) => {
+  const revenue = list.filter((item) => item.estado === 'activa').reduce((sum, item) => {
     const plan = Array.isArray(item.planes) ? item.planes[0] : item.planes;
     return sum + Number(plan?.precio_mensual ?? 0);
   }, 0);
