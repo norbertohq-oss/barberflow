@@ -152,7 +152,10 @@ export default function App() {
     return (
       <Login
         initialError={authError}
-        onLogin={(state) => setAuth(state)}
+        onLogin={(state) => {
+          setAuth(state);
+          setActiveView(roleHome[state.profile.rol]);
+        }}
         onShowRegister={() => {
           window.history.pushState(null, '', '/registro');
           setShowRegister(true);
