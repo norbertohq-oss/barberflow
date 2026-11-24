@@ -43,30 +43,21 @@ Deno.serve(async (req) => {
     const payment = await paymentResponse.json();
     if (!paymentResponse.ok) throw new Error(payment?.message ?? 'No se pudo consultar el pago en Mercado Pago.');
 
-    const metadata = payment.metadata ?? {};
+    // The order ID is created by our server and points to the original quoted price.
     const externalReference = String(payment.external_reference ?? '');
-    const [fallbackBarberiaId, fallbackPlanId] = externalReference.includes(':') ? externalReference.split(':') : [null, null];
-    const barberiaId = metadata.barberia_id ?? fallbackBarberiaId;
-    const planId = metadata.plan_id ?? fallbackPlanId;
-    if (!barberiaId || !planId) throw new Error('El pago no contiene barberia_id o plan_id.');
+    const match = /^order:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.exec(externalReference);
+    if (!match) throw new Error('El pago no tiene una orden verificable; requiere revision manual.');
+    if (payment.transaction_amount == null || !payment.currency_id) throw new Error('El pago no contiene importe o moneda.');
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    const { data: plan, error: planError } = await adminClient
-      .from('planes')
-      .select('id, precio_mensual')
-      .eq('id', planId)
-      .single();
-    if (planError || !plan) throw new Error('Plan no encontrado para el pago.');
-
     const paymentRecord = {
-      barberia_id: barberiaId,
-      plan_id: planId,
+      order_id: match[1],
       mercado_pago_payment_id: String(payment.id),
       mercado_pago_preference_id: payment.preference_id ?? null,
       status: payment.status ?? 'unknown',
       status_detail: payment.status_detail ?? null,
-      amount: Number(payment.transaction_amount ?? plan.precio_mensual ?? 0),
-      currency: payment.currency_id ?? 'MXN',
+      amount: Number(payment.transaction_amount),
+      currency: payment.currency_id,
       payer_email: payment.payer?.email ?? null,
       raw_response: payment,
     };
