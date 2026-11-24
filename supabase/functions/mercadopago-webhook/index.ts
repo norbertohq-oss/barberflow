@@ -43,55 +43,41 @@ Deno.serve(async (req) => {
     const payment = await paymentResponse.json();
     if (!paymentResponse.ok) throw new Error(payment?.message ?? 'No se pudo consultar el pago en Mercado Pago.');
 
-    const metadata = payment.metadata ?? {};
+    // The order ID is created by our server and points to the original quoted price.
     const externalReference = String(payment.external_reference ?? '');
-    const [fallbackBarberiaId, fallbackPlanId] = externalReference.includes(':') ? externalReference.split(':') : [null, null];
-    const barberiaId = metadata.barberia_id ?? fallbackBarberiaId;
-    const planId = metadata.plan_id ?? fallbackPlanId;
-    if (!barberiaId || !planId) throw new Error('El pago no contiene barberia_id o plan_id.');
-
+    const match = /^order:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.exec(externalReference);
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    const { data: plan, error: planError } = await adminClient
-      .from('planes')
-      .select('id, precio_mensual')
-      .eq('id', planId)
-      .single();
-    if (planError || !plan) throw new Error('Plan no encontrado para el pago.');
-
+    if (!match) {
+      // Pre-migration checkouts have no saved quote. Keep them for manual reconciliation.
+      const { error: reviewError } = await adminClient.from('bf_payment_review_queue').upsert({
+        payment_id: String(payment.id),
+        external_reference: externalReference || null,
+        status: payment.status ?? 'unknown',
+        amount: payment.transaction_amount ?? null,
+        currency: payment.currency_id ?? null,
+        reason: 'legacy_or_unrecognized_order',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'payment_id' });
+      if (reviewError) throw reviewError;
+      return jsonResponse({ received: true, review_required: true });
+    }
+    if (payment.transaction_amount == null || !payment.currency_id) throw new Error('El pago no contiene importe o moneda.');
     const paymentRecord = {
-      barberia_id: barberiaId,
-      plan_id: planId,
+      order_id: match[1],
       mercado_pago_payment_id: String(payment.id),
       mercado_pago_preference_id: payment.preference_id ?? null,
       status: payment.status ?? 'unknown',
       status_detail: payment.status_detail ?? null,
-      amount: Number(payment.transaction_amount ?? plan.precio_mensual ?? 0),
-      currency: payment.currency_id ?? 'MXN',
+      amount: Number(payment.transaction_amount),
+      currency: payment.currency_id,
       payer_email: payment.payer?.email ?? null,
       raw_response: payment,
     };
 
-    const { error: pagoError } = await adminClient
-      .from('pagos')
-      .upsert(paymentRecord, { onConflict: 'mercado_pago_payment_id' });
+    const { error: pagoError } = await adminClient.rpc('bf_process_mercadopago_payment', {
+      p_payment: paymentRecord,
+    });
     if (pagoError) throw pagoError;
-
-    if (payment.status === 'approved') {
-      const now = new Date();
-      const end = new Date(now);
-      end.setMonth(end.getMonth() + 1);
-
-      const { error: barberiaError } = await adminClient
-        .from('barberias')
-        .update({
-          plan_id: planId,
-          estado: 'activa',
-          fecha_inicio_plan: now.toISOString(),
-          fecha_fin_plan: end.toISOString(),
-        })
-        .eq('id', barberiaId);
-      if (barberiaError) throw barberiaError;
-    }
 
     return jsonResponse({ received: true, status: payment.status });
   } catch (error) {
