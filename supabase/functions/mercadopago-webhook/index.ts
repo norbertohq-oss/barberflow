@@ -71,27 +71,10 @@ Deno.serve(async (req) => {
       raw_response: payment,
     };
 
-    const { error: pagoError } = await adminClient
-      .from('pagos')
-      .upsert(paymentRecord, { onConflict: 'mercado_pago_payment_id' });
+    const { error: pagoError } = await adminClient.rpc('bf_process_mercadopago_payment', {
+      p_payment: paymentRecord,
+    });
     if (pagoError) throw pagoError;
-
-    if (payment.status === 'approved') {
-      const now = new Date();
-      const end = new Date(now);
-      end.setMonth(end.getMonth() + 1);
-
-      const { error: barberiaError } = await adminClient
-        .from('barberias')
-        .update({
-          plan_id: planId,
-          estado: 'activa',
-          fecha_inicio_plan: now.toISOString(),
-          fecha_fin_plan: end.toISOString(),
-        })
-        .eq('id', barberiaId);
-      if (barberiaError) throw barberiaError;
-    }
 
     return jsonResponse({ received: true, status: payment.status });
   } catch (error) {
