@@ -16,6 +16,20 @@ alter table public.bf_checkout_orders enable row level security;
 revoke all on public.bf_checkout_orders from public, anon, authenticated;
 grant select, insert, update on public.bf_checkout_orders to service_role;
 
+create table if not exists public.bf_payment_review_queue (
+ payment_id text primary key,
+ external_reference text,
+ status text not null,
+ amount numeric,
+ currency text,
+ reason text not null,
+ first_seen_at timestamptz not null default now(),
+ updated_at timestamptz not null default now()
+);
+alter table public.bf_payment_review_queue enable row level security;
+revoke all on public.bf_payment_review_queue from public, anon, authenticated;
+grant select, insert, update on public.bf_payment_review_queue to service_role;
+
 create or replace function public.bf_process_mercadopago_payment(p_payment jsonb)
 returns boolean language plpgsql security definer set search_path = public, pg_temp as $$
 declare
